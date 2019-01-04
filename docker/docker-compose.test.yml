@@ -1,0 +1,21 @@
+version: '3'
+services:
+  backend-test:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile.test
+      args:
+        port: 4001
+    env_file:
+      - ../drones.env
+    environment:
+      WAIT_HOSTS: database-test:27017
+  database-test:
+    image: mongo:4.0
+    env_file:
+      - ../drones.env
+    volumes:
+      - "./data/test_db:/data/test_db"
+    expose:
+      - 27017
+    command: "mongod --smallfiles --logpath=/var/log/mongodb/mongodb.log"
