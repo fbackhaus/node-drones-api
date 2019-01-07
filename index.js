@@ -5,6 +5,7 @@ const socketIo = require('socket.io');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const Drone = require('./models/Drone');
+const cors = require('cors');
 
 const dbName = process.env.NODE_ENV === 'dev' ? 'database-test' : 'database';
 const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${dbName}:27017/dbName?authMechanism=SCRAM-SHA-1&authSource=admin`;
@@ -20,6 +21,8 @@ const port = process.env.PORT || 4001;
 const routes = require('./routes');
 
 const app = express();
+app.use(cors());
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api', routes);
