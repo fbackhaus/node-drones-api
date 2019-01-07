@@ -1,10 +1,10 @@
+/* eslint-disable no-param-reassign */
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const bodyParser = require('body-parser');
-// const { MongoClient } = require('mongodb');
 const mongoose = require('mongoose');
-const { getDrones } = require('./routes/controller');
+const Drone = require('./models/Drone');
 
 const dbName = process.env.NODE_ENV === 'dev' ? 'database-test' : 'database';
 const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${dbName}:27017/dbName?authMechanism=SCRAM-SHA-1&authSource=admin`;
@@ -13,7 +13,8 @@ const options = {
   reconnectTries: 60,
   reconnectInterval: 1000,
 };
-
+const possibleMovements = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
+const getNewCoordinate = () => possibleMovements[Math.floor(Math.random() * possibleMovements.length)];
 
 const port = process.env.PORT || 4001;
 const routes = require('./routes');
@@ -30,10 +31,18 @@ app.use((req, res) => {
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const getApiAndEmit = async (socket, req) => {
+const getApiAndEmit = async (socket) => {
   try {
-    const res = await getDrones(req, null, null);
-    socket.emit('FromAPI', res);
+    Drone.find()
+      .then((drones) => {
+        drones.forEach((drone) => {
+          const { x, y } = drone;
+          drone.x = Number(x) + getNewCoordinate();
+          drone.y = Number(y) + getNewCoordinate();
+        });
+        Drone.updateMany(drones);
+        socket.emit('FromAPI', drones);
+      });
   } catch (error) {
     console.error(`Error: ${error.code}`);
   }
@@ -46,8 +55,7 @@ io.on('connection', (socket) => {
   if (interval) {
     clearInterval(interval);
   }
-  const req = { app };
-  interval = setInterval(() => getApiAndEmit(socket, req), 10000);
+  interval = setInterval(() => getApiAndEmit(socket), 10000);
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });

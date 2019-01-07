@@ -30,3 +30,15 @@ exports.createDrone = function createDrone(req, res, next) {
       });
     });
 };
+
+exports.deleteDrone = function deleteDrone(req, res, next) {
+  const { id } = req.params;
+  Drone.deleteOne({ id })
+    .then((data) => {
+      res.send(data);
+    }).catch((err) => {
+      res.status(500).send({
+        message: err.message || 'Some error occurred while trying to delete drone.',
+      });
+    });
+};
